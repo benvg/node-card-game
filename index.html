@@ -1,15 +1,13 @@
 <!doctype html>
 <html>
   <head>
-    <title>Socket.IO chat</title>
+    <title>Card Game 3000</title>
     <style>
       * { box-sizing: border-box; }
-     html,body { 
+      html,body { 
         height:100%;
         font: 13px Helvetica, Arial; 
       }
-
-      
 
       .pages{
         height:100%;
@@ -19,6 +17,30 @@
 
       .pages .loginPage{
         background-color: #000;
+      }
+
+       .gamePage .message{
+        height: 100%;
+        width: 100%;
+        background-color: #ccc;
+        position: absolute;
+        top: 0;
+        z-index: 101;
+        opacity: 50%;
+      }
+
+      .gamePage .message .text{
+        height: 100%;
+        margin-top: -100px;
+        position: absolute;
+        text-align: center;
+        top: 50%;
+        width: 100%;
+        z-index: 102;
+        background-color: #ccc;
+        color: #fff;
+        font-size: 30px;
+        opacity: 50%;
       }
 
       .pages .loginPage .form{
@@ -48,10 +70,35 @@
         display: none;
       }
 
-      .player{
-        display: block;
+      .row{
+        font-family: Courier;
+        font-size: 20px;
+        width: 280px;
       }
 
+      .row .player{
+        font-family: Courier;
+        float: left;
+        width: 200px;
+        padding-right: 5px;
+      }
+      .row .points{
+        font-family: Courier;
+        width:80px;
+      }
+
+      .recentlyChanged{
+        background-color: green;
+        color: white;
+      }
+
+      .row:first-child {
+        background-color: #eee;
+        font-weight: bold;
+      } 
+      .row:nth-child(odd) {
+        background-color: #eee;
+      }  
 
       #content {
         margin: 80px 70px;
@@ -65,6 +112,11 @@
         margin: 0 auto;
         background: #ffd;
       }
+
+      .usedCard{
+        background: #ffd !important;
+        border: 2px solid #ffd !important;
+       }
 
       .slot, #cardPile {
         
@@ -125,18 +177,88 @@
 
       /* Individually coloured cards */
 
-      #card1.correct { background: blue; }
-      #card2.correct { background: brown; }
-      #card3.correct { background: orange; }
-      #card4.correct { background: yellow; }
-      #card5.correct { background: green; }
-      #card6.correct { background: cyan; }
-      #card7.correct { background: blue; }
-      #card8.correct { background: indigo; }
-      #card9.correct { background: purple; }
-      #card10.correct { background: violet; }
-       #card11.correct { background: purple; }
-      #card12.correct { background: violet; }
+
+
+      #card1.correct { 
+        background: blue; 
+        color: #fff;
+        font-size: 50px;
+        text-shadow: 0 0 3px #000;
+      }
+      #card2.correct { 
+        background: brown; 
+        color: #fff;
+        font-size: 50px;
+        text-shadow: 0 0 3px #000;        
+      }
+      #card3.correct { 
+        background: orange; 
+        color: #fff;
+        font-size: 50px;
+        text-shadow: 0 0 3px #000;   
+      }
+      #card4.correct { 
+        background: yellow; 
+        color: #fff;
+        font-size: 50px;
+        text-shadow: 0 0 3px #000; 
+      }
+      #card5.correct { 
+        background: green;
+        color: #fff;
+        font-size: 50px;
+        text-shadow: 0 0 3px #000;  }
+      #card6.correct { 
+        background: cyan;
+        color: #fff;
+        font-size: 50px;
+        text-shadow: 0 0 3px #000;  }
+      #card7.correct { 
+        background: blue;
+        color: #fff;
+        font-size: 50px;
+        text-shadow: 0 0 3px #000;  }
+      #card8.correct { 
+        background: indigo;
+        color: #fff;
+        font-size: 50px;
+        text-shadow: 0 0 3px #000;  }
+      #card9.correct { 
+        background: purple;
+        color: #fff;
+        font-size: 50px;
+        text-shadow: 0 0 3px #000;  }
+      #card10.correct { 
+        background: violet;
+        color: #fff;
+        font-size: 50px;
+        text-shadow: 0 0 3px #000;  }
+      #card11.correct { 
+        background: crimson;
+        color: #fff;
+        font-size: 50px;
+        text-shadow: 0 0 3px #000;  }
+      #card12.correct { 
+        background: fuchsia;
+        color: #fff;
+        font-size: 50px;
+        text-shadow: 0 0 3px #000;  }
+
+
+        .startGameButton{
+          font-size: 30px;
+          text-align: center; 
+        }
+
+        .startGameButton input{
+          font-size: large;
+          font-weight: bold;
+          background-color: black;
+          color:#fff;
+        }
+
+
+
     </style>
   </head>
   <body>
@@ -153,15 +275,23 @@
       </div>
 
       <div class="gamePage">
-        <h3>Scoreboard</h3>
-        <div class="userInfo"></div>
+        
+        <div class="scoreboard">
+          <div class="userInfo"> </div>
+        </div>
 
+        <div class="message" style="display:none">
+          <div class="text"></div>
+        <div class="startGameButton" >
+          <input type="button" value="Start Game" onclick="games.start()"/>
+        </div>
+        </div>
         <div id="content">
           <div id="cardPile"></div>
           <br/>
           <div id="cardSlots1" class="slot">  </div>
         </div>
-      <input type="button" value="score" onclick="games.scorePoint();"/>
+      
       </div>
 
 
@@ -220,10 +350,9 @@
                   revert: true
                 });
             }else{
-              $('<div> </div>').appendTo( '#cardPile' );
+              $('<div class="usedCard"> </div>').appendTo( '#cardPile' );
             }
           }
-
 
           for ( var i=1; i<=12; i++ ) {
             if(game.scored[i-1] === 0){
@@ -234,7 +363,7 @@
                 drop: games.handleCardDrop
               } );
             } else {
-               $('<div class="numberCard"> ' + numbers[i-1] + '</div>').attr( 'id', 'card'+numbers[i-1] ).addClass('correct').appendTo( '#cardSlots1' );
+               $('<div class="numberCard"> ' + i + '</div>').attr( 'id', 'card'+ i ).addClass('correct').appendTo( '#cardSlots1' );
             }
           }
 
@@ -250,13 +379,14 @@
         },
         updateScoreBoard : function(game){
           $userInfo.html('');
+           $userInfo.append('<div class="row"><span class="player">Name</span><span class="points">Points</span></div>');
           var users = game.players;
           for(var i=0, len = users.length; i< len; i++){
-            $userInfo.append('<span class="player">' + users[i].nickname + ', points: ' + users[i].points + '</span>');
+            $userInfo.append('<div class="row"><span class="player">' + users[i].nickname + '</span><span class="points ' + (users[i].points !== users[i].previousPoints? ' recentlyChanged': '') + '">' + users[i].points + '</span></div>');
           }
 
-          if(game.changedBy !=== playerNickName){
-            game.repaintBoard(game);
+          if(game.changedBy !== playerNickName){
+           games.repaintBoard(game);
           }
         },
 
@@ -272,17 +402,28 @@
 
           if ( slotNumber == cardNumber ) {
             ui.draggable.addClass( 'correct' );
-            //ui.draggable.draggable( 'disable' );
+            ui.draggable.draggable( 'disable' );
             $(this).droppable( 'disable' );
             ui.draggable.position( { of: $(this), my: 'left top', at: 'left top' } );
             ui.draggable.draggable( 'option', 'revert', false );
             
             games.scorePoint(slotPosition, cardNumber);
           }   
+        },
+
+        start : function(){
+          socket.emit('start game');
         }
 
       };
 
+      socket.on('game has started', function(game){
+        $('.message').fadeOut();
+        games.repaintBoard(game);
+        games.updateScoreBoard(game); 
+        
+        sound.play();
+      });
 
       socket.on('player joined', function(game){
         games.setupBoard(game.numbers);
@@ -299,6 +440,11 @@
       socket.on('another player scored',function(game){
         failSound.play();
         games.repaintBoard(game);
+      });
+
+      socket.on('game over', function(result){
+        $('.message').fadeIn();
+        $('.message .text').html('<h3>Game Over</h3>' + '<div>' + result + '</div><br><div>Click the button to start another game</dov>');
       });
 
       
