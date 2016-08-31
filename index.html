@@ -106,7 +106,7 @@
         background: #aaa;
       }
 
-      .slot div {
+      wordCard div  {
         border-style: dashed;
       }
 
@@ -125,7 +125,7 @@
 
       /* Individually coloured cards */
 
-      .correct { background: blue; }
+      #card1.correct { background: blue; }
       #card2.correct { background: brown; }
       #card3.correct { background: orange; }
       #card4.correct { background: yellow; }
@@ -135,6 +135,8 @@
       #card8.correct { background: indigo; }
       #card9.correct { background: purple; }
       #card10.correct { background: violet; }
+       #card11.correct { background: purple; }
+      #card12.correct { background: violet; }
     </style>
   </head>
   <body>
@@ -175,12 +177,13 @@
       var len =0;
       var isBoardSetup = false;
       var sound = new Audio("sound.wav");
+      var failSound = new Audio("fail.wav");
 
       var games = {
         setupBoard: function (numbers){
             if(!isBoardSetup){
               for ( var i=0; i<12; i++ ) {
-                $('<div>' + numbers[i] + '</div>').data( 'number', numbers[i] ).attr( 'id', 'card'+numbers[i] ).appendTo( '#cardPile' ).draggable( {
+                $('<div class="numberCard">' + numbers[i] + '</div>').data( 'number', numbers[i] ).data('position', i).attr( 'id', 'card'+numbers[i] ).appendTo( '#cardPile' ).draggable( {
                     containment: '#content',
                     stack: '#cardPile div',
                     cursor: 'move',
@@ -190,17 +193,56 @@
 
               var words = [ 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten' , 'eleven','twelve' ];
               for ( var i=1; i<=12; i++ ) {
-                $('<div>' + words[i-1] + '</div>').appendTo( '#cardSlots1' ).droppable( {
+                $('<div class="wordCard">' + words[i-1] + '</div>').data( 'number', i ).appendTo( '#cardSlots1' ).droppable( {
                   accept: '#cardPile div',
                   hoverClass: 'hovered',
                   drop: games.handleCardDrop
                 } );
               }
+              
+              isBoardSetup = true;
           }
-        }, 
-        scorePoint: function (slotNumber, cardNumber){
+        },
+        repaintBoard:function(game){
+          $('#cardPile').html('');
+          $('.slot').html('');
+          
+          var numbers = game.numbers;
+          var words = [ 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten' , 'eleven','twelve' ];
+          for ( var i=0; i<12; i++ ) {
+            
+            if(game.slots[i] === 0){
+              
+              $('<div class="numberCard">' + numbers[i] + '</div>').data( 'number', numbers[i] ).data('position', i).attr( 'id', 'card'+numbers[i] ).appendTo( '#cardPile' ).draggable( {
+                  containment: '#content',
+                  stack: '#cardPile div',
+                  cursor: 'move',
+                  revert: true
+                });
+            }else{
+              $('<div> </div>').appendTo( '#cardPile' );
+            }
+          }
+
+
+          for ( var i=1; i<=12; i++ ) {
+            if(game.scored[i-1] === 0){
+
+              $('<div class="wordCard">' + words[i-1] + '</div>').data( 'number', i ).appendTo( '#cardSlots1' ).droppable( {
+                accept: '#cardPile div',
+                hoverClass: 'hovered',
+                drop: games.handleCardDrop
+              } );
+            } else {
+               $('<div class="numberCard"> ' + numbers[i-1] + '</div>').attr( 'id', 'card'+numbers[i-1] ).addClass('correct').appendTo( '#cardSlots1' );
+            }
+          }
+
+        },
+
+        scorePoint: function (slotPosition, cardNumber){
           var gameData = {
-            'slotNumber': slotNumber,
+            'slotPosition': slotPosition,
             'cardNumber': cardNumber,
             'nickname': playerNickName 
           };
@@ -212,10 +254,15 @@
           for(var i=0, len = users.length; i< len; i++){
             $userInfo.append('<span class="player">' + users[i].nickname + ', points: ' + users[i].points + '</span>');
           }
+
+          if(game.changedBy !=== playerNickName){
+            game.repaintBoard(game);
+          }
         },
 
         handleCardDrop: function ( event, ui ) {
           var slotNumber = $(this).data( 'number' );
+          var slotPosition = ui.draggable.data( 'position' );
           var cardNumber = ui.draggable.data( 'number' );
 
           // If the card was dropped to the correct slot,
@@ -230,7 +277,7 @@
             ui.draggable.position( { of: $(this), my: 'left top', at: 'left top' } );
             ui.draggable.draggable( 'option', 'revert', false );
             
-            games.scorePoint(slotNumber, cardNumber);
+            games.scorePoint(slotPosition, cardNumber);
           }   
         }
 
@@ -247,6 +294,11 @@
       socket.on('update scoreboard', function(game){
         games.updateScoreBoard(game);
         sound.play();
+      });
+
+      socket.on('another player scored',function(game){
+        failSound.play();
+        games.repaintBoard(game);
       });
 
       
