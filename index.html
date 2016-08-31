@@ -1,0 +1,274 @@
+<!doctype html>
+<html>
+  <head>
+    <title>Socket.IO chat</title>
+    <style>
+      * { box-sizing: border-box; }
+     html,body { 
+        height:100%;
+        font: 13px Helvetica, Arial; 
+      }
+
+      
+
+      .pages{
+        height:100%;
+        position: absolute;
+        width: 100%;
+      }
+
+      .pages .loginPage{
+        background-color: #000;
+      }
+
+      .pages .loginPage .form{
+        height: 100px;
+        margin-top: -100px;
+        position: absolute;
+        text-align: center;
+        top: 50%;
+        width: 100%;
+      }
+
+      .pages .loginPage .form .nickname{
+        background-color: transparent;
+        border: none;
+        border-bottom: 2px solid #fff;
+        outline: none;
+        padding-bottom: 15px;
+        text-align: center;
+        width: 600px;
+      }
+
+      .nickname{
+        font-size: 300%;
+      }
+
+      .pages .gamePage {
+        display: none;
+      }
+
+      .player{
+        display: block;
+      }
+
+
+      #content {
+        margin: 80px 70px;
+        text-align: center;
+        -moz-user-select: none;
+        -webkit-user-select: none;
+        user-select: none;
+      }
+
+      #cardPile {
+        margin: 0 auto;
+        background: #ffd;
+      }
+
+      .slot, #cardPile {
+        
+        margin: 0 auto;
+        width: 900px;
+        height: 120px;
+        padding: 20px;
+        border: 2px solid #333;
+        -moz-border-radius: 10px;
+        -webkit-border-radius: 10px;
+        border-radius: 10px;
+        -moz-box-shadow: 0 0 .3em rgba(0, 0, 0, .8);
+        -webkit-box-shadow: 0 0 .3em rgba(0, 0, 0, .8);
+        box-shadow: 0 0 .3em rgba(0, 0, 0, .8);
+      }
+
+      /* Individual cards and slots */
+
+      .slot div, #cardPile div {
+        font-size: 125%;
+        float: left;
+        width: 58px;
+        height: 78px;
+        /*padding: 10px;
+        padding-top: 40px;*/
+        padding-bottom: 0;
+        border: 2px solid #333;
+        -moz-border-radius: 10px;
+        -webkit-border-radius: 10px;
+        border-radius: 10px;
+        margin: 0 0 0 10px;
+        background: #fff;
+      }
+      .slot div:first-child, #cardPile div:first-child {
+        margin-left: 0;
+      }
+
+      .slot div.hovered {
+        background: #aaa;
+      }
+
+      .slot div {
+        border-style: dashed;
+      }
+
+      #cardPile div {
+        background: #666;
+        color: #fff;
+        font-size: 50px;
+        text-shadow: 0 0 3px #000;
+      }
+
+      #cardPile div.ui-draggable-dragging {
+        -moz-box-shadow: 0 0 .5em rgba(0, 0, 0, .8);
+        -webkit-box-shadow: 0 0 .5em rgba(0, 0, 0, .8);
+        box-shadow: 0 0 .5em rgba(0, 0, 0, .8);
+      }
+
+      /* Individually coloured cards */
+
+      .correct { background: blue; }
+      #card2.correct { background: brown; }
+      #card3.correct { background: orange; }
+      #card4.correct { background: yellow; }
+      #card5.correct { background: green; }
+      #card6.correct { background: cyan; }
+      #card7.correct { background: blue; }
+      #card8.correct { background: indigo; }
+      #card9.correct { background: purple; }
+      #card10.correct { background: violet; }
+    </style>
+  </head>
+  <body>
+    <script src="/socket.io/socket.io.js"></script>
+    <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.5.0/jquery.min.js"></script>
+    <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jqueryui/1.8.9/jquery-ui.min.js"></script>
+
+    <div class="pages">
+      
+      <div class="loginPage">
+        <div class="form">
+          <input class="nickname" type="text" autocomplete="off" maxlength="14" placeholder="Enter your name to join the game." />
+        </div>
+      </div>
+
+      <div class="gamePage">
+        <h3>Scoreboard</h3>
+        <div class="userInfo"></div>
+
+        <div id="content">
+          <div id="cardPile"></div>
+          <br/>
+          <div id="cardSlots1" class="slot">  </div>
+        </div>
+      <input type="button" value="score" onclick="games.scorePoint();"/>
+      </div>
+
+
+    </div>
+    <script>
+      var socket = io();
+      var $window = $(window);
+      var $nickname = $('.nickname');
+      var $loginPage = $('.loginPage');
+      var $gamePage = $('.gamePage');
+      var $userInfo = $('.userInfo');
+      var playerNickName;
+      var len =0;
+      var isBoardSetup = false;
+      var sound = new Audio("sound.wav");
+
+      var games = {
+        setupBoard: function (numbers){
+            if(!isBoardSetup){
+              for ( var i=0; i<12; i++ ) {
+                $('<div>' + numbers[i] + '</div>').data( 'number', numbers[i] ).attr( 'id', 'card'+numbers[i] ).appendTo( '#cardPile' ).draggable( {
+                    containment: '#content',
+                    stack: '#cardPile div',
+                    cursor: 'move',
+                    revert: true
+                  });
+              }
+
+              var words = [ 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten' , 'eleven','twelve' ];
+              for ( var i=1; i<=12; i++ ) {
+                $('<div>' + words[i-1] + '</div>').appendTo( '#cardSlots1' ).droppable( {
+                  accept: '#cardPile div',
+                  hoverClass: 'hovered',
+                  drop: games.handleCardDrop
+                } );
+              }
+          }
+        }, 
+        scorePoint: function (slotNumber, cardNumber){
+          var gameData = {
+            'slotNumber': slotNumber,
+            'cardNumber': cardNumber,
+            'nickname': playerNickName 
+          };
+          socket.emit('score point',gameData);
+        },
+        updateScoreBoard : function(game){
+          $userInfo.html('');
+          var users = game.players;
+          for(var i=0, len = users.length; i< len; i++){
+            $userInfo.append('<span class="player">' + users[i].nickname + ', points: ' + users[i].points + '</span>');
+          }
+        },
+
+        handleCardDrop: function ( event, ui ) {
+          var slotNumber = $(this).data( 'number' );
+          var cardNumber = ui.draggable.data( 'number' );
+
+          // If the card was dropped to the correct slot,
+          // change the card colour, position it directly
+          // on top of the slot, and prevent it being dragged
+          // again
+
+          if ( slotNumber == cardNumber ) {
+            ui.draggable.addClass( 'correct' );
+            //ui.draggable.draggable( 'disable' );
+            $(this).droppable( 'disable' );
+            ui.draggable.position( { of: $(this), my: 'left top', at: 'left top' } );
+            ui.draggable.draggable( 'option', 'revert', false );
+            
+            games.scorePoint(slotNumber, cardNumber);
+          }   
+        }
+
+      };
+
+
+      socket.on('player joined', function(game){
+        games.setupBoard(game.numbers);
+        games.updateScoreBoard(game);
+        
+        sound.play();
+      });
+
+      socket.on('update scoreboard', function(game){
+        games.updateScoreBoard(game);
+        sound.play();
+      });
+
+      
+
+
+    $window.keydown(function (event) {
+    // Auto-focus the current input when a key is typed
+    // if (!(event.ctrlKey || event.metaKey || event.altKey)) {
+      
+    // }
+    // When the client hits ENTER on their keyboard
+    if (event.which === 13) {
+      if(playerNickName){
+
+      } else {
+        playerNickName = $nickname.val();
+        socket.emit('add player', playerNickName);
+        $loginPage.fadeOut();
+        $gamePage.show();
+      }
+    }
+  });
+    </script>
+  </body>
+</html>
