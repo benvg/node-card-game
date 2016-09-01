@@ -20,6 +20,10 @@ app.get('/fail.wav', function(req, res){
   res.sendfile('fail.wav');
 });
 
+app.get('/favicon.ico', function(req, res){
+  res.sendfile('favicon.ico');
+});
+
 app.get('/reload', function(req, res){
 
 	resetGame();
