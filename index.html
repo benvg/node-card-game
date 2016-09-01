@@ -447,6 +447,10 @@
         $('.message .text').html('<h3>Game Over</h3>' + '<div>' + result + '</div><br><div>Click the button to start another game</dov>');
       });
 
+      socket.on('reload game', function(){
+        document.location = document.location;
+      });
+
       
 
 
@@ -467,6 +471,8 @@
       }
     }
   });
+
+    $nickname.focus(); 
     </script>
   </body>
 </html>

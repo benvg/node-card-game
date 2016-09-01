@@ -20,6 +20,21 @@ app.get('/fail.wav', function(req, res){
   res.sendfile('fail.wav');
 });
 
+app.get('/reload', function(req, res){
+
+	resetGame();
+	setupGame();
+
+	players = [];
+
+	console.log('reload game');
+
+	io.emit('reload game');
+
+	res.write('reloaded');
+	res.end();
+});
+
 
 
 io.on('connection', function(socket){
@@ -89,14 +104,14 @@ io.on('connection', function(socket){
   });
 
 
-});
+}); 
 
 function getResult(){
 	var winner = {'nickname':'','points':0};
 	var ties = 0;
 	var message = '';
 	for(var i=0; i< players.length; i++){
-		if(players[i].points >= winner.points){
+		if(players[i].points > winner.points){
 			winner = players[i];
 			message += ' ' + players[i].nickname;
 		}else if (players[i].points === winner.points){
@@ -144,8 +159,8 @@ function setupGame(){
   numbers.sort( function() { return Math.random() - .5 } );
 }
 
+  
 
-
-http.listen(8080, function(){
-  console.log('listening on *:8080');
+http.listen(3000, function(){
+  console.log('listening on *:3000');
 });
