@@ -1,10 +1,13 @@
 {
-  "name": "socket-chat-example",
+  "name": "node card game",
   "version": "0.0.1",
-  "description": "my first socket.io app",
+  "description": "my first node game",
   "main": "index.js",
   "dependencies": {
     "express": "^4.10.2",
     "socket.io": "^1.4.8"
+  },
+  "engines": {
+    "node": "6.4.0"
   }
 }
